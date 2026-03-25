@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Connections for Mum</title>
+
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #dfffe8;
+      padding: 40px 0;
+      display: flex;
+      justify-content: center;
+    }
+
+    #game-container {
+      width: 400px;
+      background: white;
+      padding: 24px;
+      border-radius: 16px;
+      border: 3px solid #b6e8c7;
+      box-shadow: 0 6px 14px rgba(0,0,0,0.12);
+      box-sizing: border-box;
+      text-align: center;
+    }
+
+    #title {
+      font-size: 1.8rem;
+      font-weight: 800;
+      margin-bottom: 4px;
+      color: #222;
+    }
+
+    #subtitle {
+      font-size: 0.9rem;
+      color: #666;
+      margin-bottom: 18px;
+    }
+
+    #instruction {
+      background: #dfffe8;
+      border: 2px solid #b6e8c7;
+      padding: 14px;
+      border-radius: 10px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    }
+
+    #connections-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .tile {
+      background: #ffffff;
+      border: 2px solid #bfbfbf;
+      height: 88px;
+      font-size: 1.05rem;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      user-select: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-sizing: border-box;
+      transition: background 0.15s, border-color 0.15s, transform 0.15s;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+    }
+
+    .tile:hover {
+      background: #f0f0f0;
+    }
+
+    .tile.selected {
+      background: #cfe2ff;
+      border-color: #6ea8fe;
+    }
+
+    .tile.solved {
+      display: none;
+    }
+
+    #message {
+      text-align: center;
+      font-size: 1.05rem;
+      margin-top: 10px;
+      min-height: 1.4em;
+    }
+
+    #controls {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    button {
+      padding: 12px 16px;
+      font-size: 1rem;
+      border-radius: 8px;
+      border: 1px solid #bfbfbf;
+      cursor: pointer;
+      background: #e6e6e6;
+      width: 30%;
+      font-weight: 600;
+      transition: background 0.15s;
+    }
+
+    button:hover {
+      background: #d9d9d9;
+    }
+
+    #new-game-btn {
+      margin-top: 14px;
+      width: 100%;
+      display: none;
+      background: #b7e3b7;
+      border-color: #8ac78a;
+    }
+
+    #mistakes {
+      text-align: center;
+      margin-top: 16px;
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    .mistake-dot {
+      font-size: 1.4rem;
+      margin: 0 4px;
+    }
+
+    .solved-block {
+      grid-column: 1 / span 4;
+      padding: 14px;
+      border-radius: 8px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+      color: #000;
+      background: #dfffe8;
+      border: 2px solid #b6e8c7;
+    }
+
+    .solved-title {
+      font-size: 1rem;
+      margin-bottom: 4px;
+    }
+
+    .solved-words {
+      font-size: 0.9rem;
+    }
+
+    /* Difficulty colours */
+    .diff-yellow { background: #fff4cc !important; border-color: #ffd86b !important; }
+    .diff-green  { background: #d9f7d9 !important; border-color: #8cd98c !important; }
+    .diff-blue   { background: #d9e8ff !important; border-color: #7aa7ff !important; }
+    .diff-purple { background: #ead9ff !important; border-color: #b38cff !important; }
+
+    /* Animations */
+    @keyframes shake {
+      0% { transform: translateX(0); }
+      25% { transform: translateX(-6px); }
+      50% { transform: translateX(6px); }
+      75% { transform: translateX(-4px); }
+      100% { transform: translateX(0); }
+    }
+
+    .shake { animation: shake 0.25s ease; }
+
+    @keyframes flip {
+      0% { transform: rotateX(0); opacity: 1; }
+      100% { transform: rotateX(90deg); opacity: 0; }
+    }
+
+    .flip { animation: flip 0.3s forwards ease-in; }
+
+    @keyframes slideIn {
+      from { transform: translateY(-20px); opacity: 0; }
+      to   { transform: translateY(0); opacity: 1; }
+    }
+
+    .slide-in { animation: slideIn 0.35s ease-out; }
+  </style>
+</head>
+
+<body>
+
+<div id="game-container">
+
+  <h1 id="title">Connections</h1>
+  <div id="subtitle">Made with love for Mum</div>
+
+  <div id="instruction">Create four groups of four!</div>
+
+  <div id="solved-container"></div>
+
+  <div id="connections-grid"></div>
+  <div id="message"></div>
+
+  <div id="controls">
+    <button onclick="shuffleTiles()">Shuffle</button>
+    <button onclick="deselectAll()">Deselect All</button>
+    <button onclick="submitSelection()">Submit</button>
+  </div>
+
+  <button id="new-game-btn" onclick="loadRandomPuzzle()">New Puzzle</button>
+
+  <div id="mistakes">
+    Mistakes Remaining:
+    <span id="mistake-dots"></span>
+  </div>
+
+</div>
+</div> <!-- end of #game-container -->
+
+<script>
+    
+   const puzzles = [
+    {
+      id: "P1",
+      name: "Fruits, Birds, Fabrics, Tools",
+      categories: [
+        { name: "FRUIT",   words: ["apple", "pear", "plum", "grape"], difficulty: "yellow" },
+        { name: "BIRDS",   words: ["robin", "wren", "crow", "gull"], difficulty: "green" },
+        { name: "FABRICS", words: ["denim", "silk", "linen", "wool"], difficulty: "blue" },
+        { name: "TOOLS",   words: ["hammer", "saw", "drill", "wrench"], difficulty: "purple" }
+      ]
+    },
+
+    {
+      id: "PX8",
+      name: "Things You Can Hold, Things You Can Lose, Things You Can Miss, Things You Can Save",
+      categories: [
+        { name: "THINGS YOU CAN HOLD", words: ["ticket", "hands", "opinion", "meeting"], difficulty: "yellow" },
+        { name: "THINGS YOU CAN LOSE", words: ["keys", "temper", "game", "weight"], difficulty: "green" },
+        { name: "THINGS YOU CAN MISS", words: ["bus", "chance", "target", "person"], difficulty: "blue" },
+        { name: "THINGS YOU CAN SAVE", words: ["money", "file", "seat", "time"], difficulty: "purple" }
+      ]
+    },
+
+    {
+      id: "P2",
+      name: "Colours, Animals, Drinks, Shapes",
+      categories: [
+        { name: "COLOURS", words: ["red", "blue", "green", "yellow"], difficulty: "yellow" },
+        { name: "ANIMALS", words: ["lion", "tiger", "zebra", "rhino"], difficulty: "green" },
+        { name: "DRINKS",  words: ["tea", "coffee", "cola", "water"], difficulty: "blue" },
+        { name: "SHAPES",  words: ["circle", "square", "triangle", "oval"], difficulty: "purple" }
+      ]
+    },
+
+    {
+      id: "P3",
+      name: "Weather, Music, Transport, Jobs",
+      categories: [
+        { name: "WEATHER",  words: ["rain", "sun", "snow", "wind"], difficulty: "yellow" },
+        { name: "MUSIC",    words: ["piano", "guitar", "drums", "violin"], difficulty: "green" },
+        { name: "TRANSPORT",words: ["train", "bus", "car", "boat"], difficulty: "blue" },
+        { name: "JOBS",     words: ["nurse", "teacher", "chef", "pilot"], difficulty: "purple" }
+      ]
+    },
+    {
+  id: "P4",
+  name: "Sharp, Cold, Round, Loud",
+  categories: [
+    { name: "SHARP", words: ["needle", "razor", "thorn", "icicle"], difficulty: "yellow" },
+    { name: "COLD", words: ["ice", "snowman", "freezer", "glacier"], difficulty: "green" },
+    { name: "ROUND", words: ["coin", "marble", "planet", "drum"], difficulty: "blue" },
+    { name: "LOUD", words: ["siren", "thunder", "crowd", "engine"], difficulty: "purple" }
+  ]
+},
+{
+  id: "P5",
+  name: "Break, Lift, Wear, Open",
+  categories: [
+    { name: "BREAK", words: ["promise", "glass", "record", "habit"], difficulty: "yellow" },
+    { name: "LIFT", words: ["box", "barbell", "chair", "suitcase"], difficulty: "green" },
+    { name: "WEAR", words: ["scarf", "helmet", "boots", "gloves"], difficulty: "blue" },
+    { name: "OPEN", words: ["door", "email", "account", "window"], difficulty: "purple" }
+  ]
+},
+
+
+  ];
+
+  let categories = [];
+  const wordToCategory = {};
+  let selected = [];
+  let solvedCategories = new Set();
+  let mistakesRemaining = 4;
+  let currentPuzzleIndex = 0;
+
+  function saveUsedPuzzle(index) {
+    const key = "connections_used_puzzles";
+    const stored = localStorage.getItem(key);
+    let used = stored ? JSON.parse(stored) : [];
+    if (!used.includes(index)) {
+      used.push(index);
+      localStorage.setItem(key, JSON.stringify(used));
+    }
+  }
+
+  function getNextRandomPuzzleIndex() {
+    const key = "connections_used_puzzles";
+    const stored = localStorage.getItem(key);
+    let used = stored ? JSON.parse(stored) : [];
+
+    if (used.length >= puzzles.length) {
+      used = [];
+      localStorage.setItem(key, JSON.stringify(used));
+    }
+
+    const available = puzzles
+      .map((_, i) => i)
+      .filter(i => !used.includes(i));
+
+    return available[Math.floor(Math.random() * available.length)];
+  }
+
+  function loadRandomPuzzle() {
+    const idx = getNextRandomPuzzleIndex();
+    loadPuzzle(idx, true);
+  }
+
+  function loadPuzzle(index, markUsed) {
+    currentPuzzleIndex = index;
+    if (markUsed) saveUsedPuzzle(index);
+
+    const puzzle = puzzles[index];
+    categories = puzzle.categories;
+
+    Object.keys(wordToCategory).forEach(k => delete wordToCategory[k]);
+    categories.forEach(cat => cat.words.forEach(w => wordToCategory[w] = cat));
+
+    selected = [];
+    solvedCategories = new Set();
+    mistakesRemaining = 4;
+
+    document.getElementById("message").textContent = "";
+    document.getElementById("solved-container").innerHTML = "";
+    document.getElementById("new-game-btn").style.display = "none";
+
+    renderMistakeDots();
+    renderGrid();
+  }
+
+  function renderMistakeDots() {
+    const dots = document.getElementById("mistake-dots");
+    let output = "";
+    for (let i = 0; i < 4; i++) {
+      output += `<span class="mistake-dot">${i < mistakesRemaining ? "●" : "○"}</span>`;
+    }
+    dots.innerHTML = output;
+  }
+
+  function shuffle(array) {
+    return array.sort(() => Math.random() - 0.5);
+  }
+
+  function renderGrid() {
+    const grid = document.getElementById("connections-grid");
+    grid.innerHTML = "";
+
+    const remainingWords = categories
+      .flatMap(cat => cat.words)
+      .filter(w => !isWordSolved(w));
+
+    const allWords = shuffle(remainingWords);
+
+    allWords.forEach(word => {
+      const tile = document.createElement("div");
+      tile.className = "tile";
+      tile.dataset.word = word;
+      tile.textContent = word;
+      tile.onclick = () => toggleSelect(tile, word);
+      grid.appendChild(tile);
+    });
+  }
+
+  function isWordSolved(word) {
+    const cat = wordToCategory[word];
+    return solvedCategories.has(cat.name);
+  }
+
+  function toggleSelect(tile, word) {
+    if (tile.classList.contains("solved")) return;
+
+    tile.classList.toggle("selected");
+
+    if (selected.includes(word)) {
+      selected = selected.filter(w => w !== word);
+    } else {
+      selected.push(word);
+    }
+  }
+
+  function deselectAll() {
+    document.querySelectorAll(".tile.selected").forEach(t => t.classList.remove("selected"));
+    selected = [];
+  }
+
+  function shuffleTiles() {
+    deselectAll();
+    renderGrid();
+  }
+
+  function submitSelection() {
+    if (selected.length !== 4) {
+      document.getElementById("message").textContent = "Select four words.";
+      return;
+    }
+
+    const cat = wordToCategory[selected[0]];
+    if (cat && selected.every(w => wordToCategory[w] === cat) && !solvedCategories.has(cat.name)) {
+      handleCorrect(cat);
+    } else {
+      handleIncorrect();
+    }
+  }
+
+  function handleCorrect(cat) {
+    const message = document.getElementById("message");
+    message.textContent = "Correct - Well done!";
+
+    solvedCategories.add(cat.name);
+
+    selected.forEach(word => {
+      const tile = [...document.querySelectorAll(".tile")]
+        .find(t => t.dataset.word === word);
+      if (tile) {
+        tile.classList.add("flip");
+        if (cat.difficulty) tile.classList.add(`diff-${cat.difficulty}`);
+        setTimeout(() => tile.classList.add("solved"), 300);
+      }
+    });
+
+    addSolvedBlock(cat);
+    selected = [];
+    setTimeout(renderGrid, 310);
+
+    if (solvedCategories.size === categories.length) {
+      message.textContent = "You solved them all!";
+      document.getElementById("new-game-btn").style.display = "block";
+    }
+  }
+
+  function addSolvedBlock(cat) {
+    const solvedContainer = document.getElementById("solved-container");
+
+    const block = document.createElement("div");
+    block.className = "solved-block slide-in";
+
+    if (cat.difficulty) {
+      block.classList.add(`diff-${cat.difficulty}`);
+    }
+
+    const title = document.createElement("div");
+    title.className = "solved-title";
+    title.textContent = cat.name;
+
+    const wordsLine = document.createElement("div");
+    wordsLine.className = "solved-words";
+    wordsLine.textContent = cat.words.join(" • ");
+
+    block.appendChild(title);
+    block.appendChild(wordsLine);
+
+    solvedContainer.appendChild(block);
+  }
+
+  function handleIncorrect() {
+    mistakesRemaining--;
+    renderMistakeDots();
+
+    document.querySelectorAll(".tile.selected").forEach(tile => {
+      tile.classList.add("shake");
+      setTimeout(() => tile.classList.remove("shake"), 300);
+    });
+
+    if (mistakesRemaining <= 0) {
+      document.getElementById("message").textContent = "No mistakes left. Here are the solutions.";
+      revealAllSolutions();
+      document.getElementById("new-game-btn").style.display = "block";
+      return;
+    }
+
+    document.getElementById("message").textContent = "Not quite — try again.";
+    setTimeout(deselectAll, 310);
+  }
+
+  function revealAllSolutions() {
+    const solvedContainer = document.getElementById("solved-container");
+    const grid = document.getElementById("connections-grid");
+
+    solvedContainer.innerHTML = "";
+    grid.innerHTML = "";
+
+    categories.forEach(cat => {
+      addSolvedBlock(cat);
+    });
+  }
+
+  function init() {
+    loadRandomPuzzle();
+  }
+
+  init();
+</script>
+
+
+</body>
+</html>
